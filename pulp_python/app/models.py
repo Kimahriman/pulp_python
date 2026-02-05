@@ -1,6 +1,7 @@
 import hashlib
 import json
 from logging import getLogger
+import tempfile
 
 from aiohttp.web import json_response
 from django.contrib.postgres.fields import ArrayField
@@ -24,6 +25,7 @@ from pulpcore.plugin.responses import ArtifactResponse
 from pathlib import PurePath
 from .provenance import Provenance
 from .utils import (
+    artifact_to_metadata_artifact,
     artifact_to_python_content_data,
     canonicalize_name,
     python_content_to_json,
@@ -215,7 +217,14 @@ class PythonPackageContent(Content):
         """Used when downloading package from pull-through cache."""
         path = PurePath(relative_path)
         data = artifact_to_python_content_data(path.name, artifact, domain=get_domain())
-        return PythonPackageContent(**data)
+        
+        artifacts = {relative_path: artifact}
+        with tempfile.TemporaryDirectory(dir=settings.WORKING_DIRECTORY) as temp_dir:
+            if metadata_artifact := artifact_to_metadata_artifact(
+                path.name, artifact, tmp_dir=temp_dir
+            ):
+                artifacts[f"{relative_path}.metadata"] = metadata_artifact
+        return PythonPackageContent(**data), artifacts
 
     def __str__(self):
         """
