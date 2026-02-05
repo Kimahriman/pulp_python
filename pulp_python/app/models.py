@@ -217,7 +217,7 @@ class PythonPackageContent(Content):
         """Used when downloading package from pull-through cache."""
         path = PurePath(relative_path)
         data = artifact_to_python_content_data(path.name, artifact, domain=get_domain())
-        
+
         artifacts = {relative_path: artifact}
         with tempfile.TemporaryDirectory(dir=settings.WORKING_DIRECTORY) as temp_dir:
             if metadata_artifact := artifact_to_metadata_artifact(
